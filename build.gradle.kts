@@ -4,6 +4,7 @@ plugins {
 	id("org.springframework.boot") version "3.3.5"
 	id("io.spring.dependency-management") version "1.1.6"
 	kotlin("plugin.jpa") version "1.9.25"
+	kotlin("kapt") version "1.9.25"
 }
 
 group = "com.seung"
@@ -25,6 +26,8 @@ repositories {
 	mavenCentral()
 }
 
+val queryDslVersion: String by extra
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-security")
@@ -39,6 +42,35 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
+
+	// QueryDSL 의존성 추가
+	implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+	kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
+	kapt("jakarta.annotation:jakarta.annotation-api")
+	kapt("jakarta.persistence:jakarta.persistence-api")
+
+}
+
+// Querydsl 설정부 추가 - start
+val generated = file("src/main/generated")
+
+// querydsl QClass 파일 생성 위치를 지정
+tasks.withType<JavaCompile> {
+	options.generatedSourceOutputDirectory.set(generated)
+}
+
+// kotlin source set 에 querydsl QClass 위치 추가
+sourceSets {
+	main {
+		kotlin.srcDirs += generated
+	}
+}
+
+// gradle clean 시에 QClass 디렉토리 삭제
+tasks.named("clean") {
+	doLast {
+		generated.deleteRecursively()
+	}
 }
 
 kotlin {
@@ -56,3 +88,4 @@ allOpen {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
